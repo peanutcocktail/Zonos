@@ -5,7 +5,13 @@ import gradio as gr
 from zonos.model import Zonos
 from zonos.conditioning import make_cond_dict, supported_language_codes
 
-device = "cuda"
+if torch.cuda.is_available():
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
+
 CURRENT_MODEL_TYPE = None
 CURRENT_MODEL = None
 
@@ -15,7 +21,11 @@ def load_model_if_needed(model_choice: str):
     if CURRENT_MODEL_TYPE != model_choice:
         if CURRENT_MODEL is not None:
             del CURRENT_MODEL
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            elif torch.backends.mps.is_available():
+                torch.mps.empty_cache()
+
         print(f"Loading {model_choice} model...")
         if model_choice == "Transformer":
             CURRENT_MODEL = Zonos.from_pretrained("Zyphra/Zonos-v0.1-transformer", device=device)
